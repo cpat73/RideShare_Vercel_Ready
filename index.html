@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101c32">
+<meta name="description" content="Interactive ride-sharing profit calculator. Adjust drivers, trips, fares, commissions, expenses and corporate tax to model monthly earnings and 12-month growth.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>RideShare Financial Simulator | Interactive Sliders</title>
+<style>
+:root{--dark:#101c32;--navy:#192a47;--teal:#0b9b8b;--mint:#e5f7f3;--sky:#eaf2fb;--bg:#f3f6fb;--text:#17243b;--sub:#68778c;--line:#dfe7ee;--red:#bf3f58;--gold:#e3a044}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text)}
+header{background:var(--dark);color:white;padding:23px clamp(16px,3vw,48px);display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{font-size:21px;font-weight:850;letter-spacing:-.5px}.brand b{color:#52cdb8}.tag{font-size:11px;color:#b7c8df;letter-spacing:2px;font-weight:800}
+header p{margin:3px 0 0;color:#abbcce;font-size:13px}.header-actions{display:flex;gap:9px;flex-wrap:wrap}
+button,.buttonlike{font:inherit;font-weight:700;cursor:pointer;border-radius:9px;border:1px solid #415271;color:#f4f8ff;background:#253651;padding:10px 14px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+button:focus-visible,.buttonlike:focus-visible,input:focus-visible{outline:3px solid #62d3bc;outline-offset:2px}
+.sharefeedback{font-size:12px;color:#d1f5e9;min-width:0}
+.sharefeedback:not(:empty){padding:3px 0}
+@media(max-width:650px){.header-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.header-actions>*{min-width:0;text-align:center}.sharefeedback{grid-column:1/-1}}
+button:hover,.buttonlike:hover{background:#324763}.primary{background:var(--teal);border-color:var(--teal)}
+.layout{display:grid;grid-template-columns:minmax(305px,380px) minmax(550px,1fr);gap:20px;max-width:1640px;margin:22px auto;padding:0 20px}
+.sidebar,.pane,.card{border:1px solid var(--line);background:white;border-radius:14px;box-shadow:0 3px 12px #1e2e4910}
+.sidebar{overflow:hidden;align-self:start}.sidebar-heading{padding:18px 20px;border-bottom:1px solid var(--line);background:#f9fbff}
+.sidebar-heading h2{margin:0;font-size:17px}.sidebar-heading p{color:var(--sub);margin:4px 0 0;font-size:12px}
+.scrollbox{max-height:calc(100vh - 190px);overflow-y:auto}
+.section h3{margin:0;padding:11px 20px;background:#f0f5f9;font-size:11px;letter-spacing:1px;color:#496078}
+.control{padding:13px 20px;border-bottom:1px solid #edf1f5}.controlhead{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.controlhead label{font-weight:650;font-size:12px;line-height:1.4}.editable{display:flex;align-items:center;gap:4px}
+.editable input{width:78px;max-width:95px;padding:6px 7px;border:1px solid #c8d8e7;border-radius:6px;text-align:right;color:#164fba;background:#f4f8ff;font-weight:800;font-size:12px}
+.editable span{font-size:11px;color:#68778c}.control input[type=range]{width:100%;margin:10px 0 0;accent-color:var(--teal);cursor:pointer}
+.ends{display:flex;justify-content:space-between;font-size:10px;color:#91a1b1}.resultarea{min-width:0}
+.sectiontitle{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}.sectiontitle h2{margin:0;font-size:17px;letter-spacing:-.4px}.sectiontitle small{font-size:11px;color:var(--sub)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{padding:17px 16px}.card small{text-transform:uppercase;letter-spacing:.8px;font-size:10px;color:var(--sub);font-weight:800;display:block}
+.card strong{font-size:26px;display:block;margin-top:6px;letter-spacing:-1.1px;line-height:1.22}
+.card.highlight{background:var(--mint);border-color:#b6e7dd}.card.highlight strong{color:#087a6a}
+.card em{font-style:normal;font-size:11px;color:var(--sub)}
+.dual{display:grid;grid-template-columns:1.2fr 1fr;gap:13px;margin-top:14px}
+.pane{padding:19px;overflow:hidden}.pane h3{font-size:15px;margin:0 0 13px;letter-spacing:-.2px}
+.stack{height:32px;display:flex;border-radius:8px;overflow:hidden;background:#dce5ee;margin:18px 0 13px}
+.stack>div{height:100%;min-width:0;transition:width .12s}.legend{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.legenditem{display:flex;align-items:center;gap:8px;font-size:12px}.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.legenditem span{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:750}
+.breakdown{display:grid;grid-template-columns:1fr auto;row-gap:9px;font-size:12px;margin-top:17px;color:#667489}.breakdown b{font-size:13px;color:#223047}
+.status{padding:10px 13px;border-radius:9px;background:#edf9f4;color:#11634d;font-weight:650;font-size:12px;margin-top:14px}
+.status.loss{background:#ffeff0;color:#b52a44}
+.forecast{margin-top:14px}.forecast svg{display:block;width:100%;height:auto;overflow:visible}
+.gridline{stroke:#e0e8ef;stroke-width:1}.axislabel{font-size:11px;fill:#718198}
+.table-scroll{overflow:auto;margin-top:12px}table{border-collapse:collapse;width:100%;min-width:665px;font-size:12px}th{background:#e8f0f7;text-align:right;color:#435b78;white-space:nowrap;padding:9px 10px}th:first-child,td:first-child{text-align:left}td{padding:9px 10px;text-align:right;border-bottom:1px solid #ebeff4;white-space:nowrap;font-variant-numeric:tabular-nums}tr:nth-child(even) td{background:#fafcff}
+.foot{margin:18px 0 32px;color:#718198;font-size:12px;line-height:1.65}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.scrollbox{max-height:480px}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.layout{padding:0 10px;margin:10px auto}.dual{grid-template-columns:1fr}.kpis{gap:8px}.card strong{font-size:22px}header{display:block}.header-actions{margin-top:13px}}
+@media print{header,.sidebar,.header-actions{display:none!important}.layout{display:block}.resultarea{width:100%}.card,.pane{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+<div><div class="tag">BUSINESS MODEL • USD</div><div class="brand">RIDE<b>SHARE</b> / FINANCIAL LAB</div><p>Move any slider to instantly recalculate revenue, expenses, tax and growth.</p></div>
+<div class="header-actions">
+<button type="button" onclick="resetAll()">↺ Reset</button>
+<button type="button" class="primary" onclick="shareScenario()">↗ Copy scenario link</button>
+<button type="button" onclick="exportCSV()">↓ Export 12-month CSV</button>
+<a class="buttonlike" href="files/RideShare_Profit_Tax_Calculator.xlsx" download>↓ Download Excel</a>
+<div class="sharefeedback" id="share-feedback" role="status" aria-live="polite"></div>
+</div>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="sidebar-heading"><h2>Adjust your assumptions</h2><p>Use sliders or type exact values. All 21 inputs are live.</p></div><div class="scrollbox" id="controls"></div></aside>
+<main class="resultarea">
+<div class="sectiontitle"><h2>Monthly business snapshot</h2><small>Auto-updated from your controls</small></div>
+<div class="kpis">
+<div class="card"><small>Gross passenger fares</small><strong id="k-gross">—</strong><em>All completed trips</em></div>
+<div class="card"><small>Your company commission</small><strong id="k-company">—</strong><em>Before fees and taxes</em></div>
+<div class="card highlight"><small>Your company net profit</small><strong id="k-net">—</strong><em>After modeled expenses + tax</em></div>
+<div class="card"><small>Monthly completed rides</small><strong id="k-rides">—</strong><em id="drivers-summary"></em></div>
+</div>
+<div class="dual">
+<section class="pane"><h3>How passenger fares are allocated</h3>
+<div class="stack" id="stack"></div><div class="legend" id="legend"></div>
+<div class="status" id="status"></div>
+</section>
+<section class="pane"><h3>Company profit bridge · per month</h3>
+<div class="breakdown">
+<div>Gross company commission</div><b id="b-commission"></b>
+<div>Card processing</div><b id="b-card"></b>
+<div>Payout, local and other ride costs</div><b id="b-var"></b>
+<div>Fixed operations + payroll taxes</div><b id="b-fixed"></b>
+<div>State corporate income tax</div><b id="b-state"></b>
+<div>Federal corporate income tax</div><b id="b-federal"></b>
+<div><strong>Net company income</strong></div><b id="b-net"></b>
+</div></section>
+</div>
+<section class="pane forecast">
+<div class="sectiontitle"><h2>Net company profit over 12 months</h2><small id="year-total">—</small></div>
+<svg id="chart" viewBox="0 0 860 260" role="img" aria-label="Dynamic 12-month profit line chart"></svg>
+</section>
+<section class="pane forecast"><div class="sectiontitle"><h2>12-month financial projection</h2><small>Dollar amounts are estimates</small></div>
+<div class="table-scroll"><table><thead><tr><th>Month</th><th>Drivers</th><th>Fare volume</th><th>Company fee</th><th>Pre-tax</th><th>Tax</th><th>Net income</th></tr></thead><tbody id="forecastbody"></tbody></table></div>
+</section>
+<div class="foot"><strong>Sharing:</strong> Copy a scenario link to let someone open this calculator with your current slider values. No login is needed. Download the Excel workbook for offline calculations. <strong>Model notes:</strong> Assumes a C corporation, a monthly loss floor of zero for modeled income taxes, and state corporate income tax deducted before federal tax. It does not include personal tax on distributions or jurisdiction-specific regulatory classification. Processor default (2.6% + $0.15) comes from the standard rates advertised in the Merchant Solutions Corp partner deck; custom pricing may apply. This browser version is a standalone companion to your Excel workbook, not a synchronized copy.</div>
+</main>
+</div>
+<script>
+const specs=[{"r":7,"name":"Active drivers","val":50,"unit":"drivers","min":0,"max":5000,"step":1,"kind":"num","note":"Number of drivers earning fares each month"},{"r":8,"name":"Rides per driver per active day","val":5,"unit":"rides/day","min":0,"max":40,"step":0.5,"kind":"one","note":"Averaged across active drivers"},{"r":9,"name":"Active driving days per month","val":20,"unit":"days","min":1,"max":31,"step":1,"kind":"num","note":"Average working days per driver"},{"r":10,"name":"Average passenger fare","val":20,"unit":"$/trip","min":1,"max":200,"step":0.5,"kind":"money2","note":"All-in passenger fare before service fees"},{"r":11,"name":"Platform commission","val":0.25,"unit":"% fares","min":0,"max":0.5,"step":0.005,"kind":"pct","note":"Your share of each completed ride"},{"r":12,"name":"Rides paid by card","val":1.0,"unit":"% rides","min":0,"max":1,"step":0.005,"kind":"pct","note":"Assumes non-card rides avoid card processing fees"},{"r":14,"name":"Card processor % fee","val":0.026,"unit":"% card fares","min":0,"max":0.06,"step":0.001,"kind":"pct","note":"MSC deck standard offer: 2.6%; custom rates may apply"},{"r":15,"name":"Card processor flat fee","val":0.15,"unit":"$/card ride","min":0,"max":1,"step":0.01,"kind":"money2","note":"MSC deck standard offer: $0.15 per transaction"},{"r":16,"name":"Driver payout transfer fee","val":0,"unit":"$/ride","min":0,"max":2,"step":0.01,"kind":"money2","note":"Edit after confirming marketplace payout fees"},{"r":17,"name":"Local per-trip fee borne by platform","val":0,"unit":"$/ride","min":0,"max":5,"step":0.01,"kind":"money2","note":"City / airport / local assessment if company pays"},{"r":18,"name":"Other variable cost","val":0,"unit":"$/ride","min":0,"max":5,"step":0.01,"kind":"money2","note":"Variable support, incentive or trip servicing cost"},{"r":20,"name":"Software, hosting & operations","val":1200,"unit":"$/month","min":0,"max":30000,"step":100,"kind":"money","note":"Cloud servers, mapping, routing, app maintenance"},{"r":21,"name":"Employee payroll (non-driver)","val":1800,"unit":"$/month","min":0,"max":50000,"step":100,"kind":"money","note":"Staff wage expense before employer payroll tax"},{"r":22,"name":"Marketing & promotions","val":1500,"unit":"$/month","min":0,"max":50000,"step":100,"kind":"money","note":"Monthly acquisition and promotions spending"},{"r":23,"name":"Insurance & compliance","val":700,"unit":"$/month","min":0,"max":50000,"step":100,"kind":"money","note":"Business insurance and regulatory costs"},{"r":24,"name":"Other fixed monthly expenses","val":300,"unit":"$/month","min":0,"max":50000,"step":100,"kind":"money","note":"Accounting, admin, software subscriptions, etc."},{"r":25,"name":"Employer payroll tax assumption","val":0.0765,"unit":"% wages","min":0,"max":0.2,"step":0.005,"kind":"pct","note":"Illustrative FICA on non-driver employees; limits/exceptions apply"},{"r":28,"name":"Federal C-corp income tax rate","val":0.21,"unit":"% pretax","min":0,"max":0.4,"step":0.005,"kind":"pct","note":"21% illustrative federal C-corp rate; not an LLC owner rate"},{"r":29,"name":"State corporate income tax assumption","val":0,"unit":"% pretax","min":0,"max":0.15,"step":0.005,"kind":"pct","note":"Illustrative, varies by state and company structure"},{"r":30,"name":"Monthly growth in active drivers","val":0,"unit":"% / month","min":-0.1,"max":0.25,"step":0.005,"kind":"pct","note":"Applied in 12-month projection; month 1 = base"},{"r":31,"name":"Monthly growth in average fare","val":0,"unit":"% / month","min":-0.1,"max":0.15,"step":0.005,"kind":"pct","note":"Applied in 12-month projection; month 1 = base"}];
+const defaults=Object.fromEntries(specs.map(s=>[s.r,s.val]));
+let state={...defaults};
+let lastMonths=[];
+const fmtUSD=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+const fmtInt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n);
+const pct=n=>(n*100).toFixed(1)+'%';
+const groups=[
+{title:'01 · DEMAND & PRICING',r:[7,8,9,10,11,12]},
+{title:'02 · PAYMENTS & PER-RIDE FEES',r:[14,15,16,17,18]},
+{title:'03 · OPERATING COSTS',r:[20,21,22,23,24,25]},
+{title:'04 · TAXES & GROWTH',r:[28,29,30,31]}];
+function precision(n){let x=String(n);return x.includes('.') ? Math.min(3,x.split('.')[1].length):0}
+function showInput(v,s){
+ let x=s.kind==='pct'?v*100:v;
+ return Number(x.toFixed(s.kind==='pct'?2:(s.kind==='money2'||s.kind==='one'?2:0)));
+}
+function createControls(){
+let html='';
+for(const g of groups){
+ html+=`<section class="section"><h3>${g.title}</h3>`;
+ for(const r of g.r){
+  const s=specs.find(x=>x.r===r), scale=s.kind==='pct'?100:1, step=s.step*scale;
+  html+=`<div class="control"><div class="controlhead"><label for="sl${r}">${s.name}</label><div class="editable"><input aria-label="${s.name}" id="num${r}" type="number" min="${s.min*scale}" max="${s.max*scale}" step="${step}" value="${showInput(state[s.r],s)}"><span>${s.kind==='pct'?'%':s.unit}</span></div></div>
+  <input aria-label="${s.name} slider" id="sl${r}" type="range" min="${s.min*scale}" max="${s.max*scale}" step="${step}" value="${state[s.r]*scale}">
+  <div class="ends"><span>${showInput(s.min,s)}</span><span>${showInput(s.max,s)}</span></div></div>`;
+ }
+ html+='</section>';
+}
+document.getElementById('controls').innerHTML=html;
+for(const s of specs){
+ let scale=s.kind==='pct'?100:1, sl=document.getElementById('sl'+s.r),num=document.getElementById('num'+s.r);
+ sl.addEventListener('input',()=>{state[s.r]=Number(sl.value)/scale;num.value=showInput(state[s.r],s);refresh()});
+ num.addEventListener('input',()=>{
+  if(num.value==='')return;
+  let v=Math.max(s.min,Math.min(s.max,Number(num.value)/scale));
+  if(Number.isFinite(v)){state[s.r]=v;sl.value=v*scale;refresh()}
+ });
+}
+}
+function calc(drivers,fare){
+ let trips=drivers*state[8]*state[9], gross=trips*fare;
+ let company=gross*state[11], driver=gross-company;
+ let card=gross*state[12]*state[14]+trips*state[12]*state[15];
+ let varcost=trips*(state[16]+state[17]+state[18]);
+ let fixed=state[20]+state[21]+state[22]+state[23]+state[24]+state[21]*state[25];
+ let pretax=company-card-varcost-fixed;
+ let statetax=Math.max(0,pretax)*state[29];
+ let federaltax=Math.max(0,pretax-statetax)*state[28];
+ let net=pretax-statetax-federaltax;
+ return {drivers, fare, trips,gross,company,driver,card,varcost,fixed,pretax,statetax,federaltax,tax:statetax+federaltax,net};
+}
+function show(id,val){document.getElementById(id).textContent=val}
+function refresh(){
+ let m=calc(state[7],state[10]);
+ show('k-gross',fmtUSD(m.gross));show('k-company',fmtUSD(m.company));show('k-net',fmtUSD(m.net));show('k-rides',fmtInt(m.trips));
+ show('drivers-summary',fmtInt(state[7])+' active drivers');
+ show('b-commission',fmtUSD(m.company));show('b-card','− '+fmtUSD(m.card));show('b-var','− '+fmtUSD(m.varcost));
+ show('b-fixed','− '+fmtUSD(m.fixed));show('b-state','− '+fmtUSD(m.statetax));show('b-federal','− '+fmtUSD(m.federaltax));show('b-net',fmtUSD(m.net));
+ const parts=[
+ {name:'Drivers',amount:m.driver,color:'#7d8fa9'},
+ {name:'Card processor',amount:m.card,color:'#e4a44c'},
+ {name:'Other company costs',amount:m.varcost+m.fixed,color:'#b887b3'},
+ {name:'Corporate tax',amount:m.tax,color:'#6b59be'},
+ {name:'Company net profit',amount:Math.max(0,m.net),color:'#0b9b8b'}];
+ const total=parts.reduce((sum,p)=>sum+Math.max(0,p.amount),0);
+ document.getElementById('stack').innerHTML=parts.map(p=>`<div style="width:${total>0?Math.max(0,p.amount)/total*100:0}%;background:${p.color}" title="${p.name}: ${fmtUSD(p.amount)}"></div>`).join('');
+ document.getElementById('legend').innerHTML=parts.map(p=>`<div class="legenditem"><i class="dot" style="background:${p.color}"></i>${p.name}<span>${fmtUSD(p.amount)}</span></div>`).join('');
+ const status=document.getElementById('status');status.className='status'+(m.net<0?' loss':'');
+ status.textContent=m.net<0?'Operating loss: income taxes are modeled as $0 until taxable profit is positive.':`Company retains ${m.company ? pct(m.net/m.company) : '0%'} of its commission after modeled costs and taxes.`;
+ lastMonths=[];
+ for(let i=0;i<12;i++){
+  let drivers=Math.round(state[7]*Math.pow(1+state[30],i));
+  let fare=state[10]*Math.pow(1+state[31],i);
+  lastMonths.push(calc(drivers,fare));
+ }
+ drawChart(lastMonths);
+ let tbody=document.getElementById('forecastbody');
+ tbody.innerHTML=lastMonths.map((x,i)=>`<tr><td>Month ${i+1}</td><td>${fmtInt(x.drivers)}</td><td>${fmtUSD(x.gross)}</td><td>${fmtUSD(x.company)}</td><td>${fmtUSD(x.pretax)}</td><td>${fmtUSD(x.tax)}</td><td style="font-weight:800;color:${x.net>=0?'#0b806e':'#bf3f58'}">${fmtUSD(x.net)}</td></tr>`).join('');
+ show('year-total','Year 1 net: '+fmtUSD(lastMonths.reduce((sum,p)=>sum+p.net,0)));
+}
+function drawChart(months){
+ const svg=document.getElementById('chart'), W=860,H=260,left=75,right=25,top=18,bottom=43;
+ let nums=months.map(m=>m.net), lo=Math.min(0,...nums),hi=Math.max(0,...nums);
+ if(Math.abs(hi-lo)<.001){hi+=1;lo-=1}
+ const padding=(hi-lo)*.12;lo-=padding;hi+=padding;
+ const px=i=>left+i*(W-left-right)/11,py=v=>top+(hi-v)*(H-top-bottom)/(hi-lo);
+ let out='';
+ for(let i=0;i<=4;i++){
+  let v=lo+(hi-lo)*i/4,y=py(v);
+  out+=`<line class="gridline" x1="${left}" y1="${y}" x2="${W-right}" y2="${y}"/><text class="axislabel" x="${left-10}" y="${y+4}" text-anchor="end">${fmtUSD(v)}</text>`;
+ }
+ out+=`<line x1="${left}" y1="${py(0)}" x2="${W-right}" y2="${py(0)}" stroke="#8799ad" stroke-width="1.2" stroke-dasharray="4 5"/>`;
+ const points=nums.map((v,i)=>`${px(i)},${py(v)}`).join(' ');
+ const under=`${left},${py(0)} ${points} ${px(11)},${py(0)}`;
+ out+=`<polygon points="${under}" fill="#e8f7f2" opacity=".8"/><polyline points="${points}" fill="none" stroke="#0b9b8b" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+ nums.forEach((v,i)=>{out+=`<circle cx="${px(i)}" cy="${py(v)}" r="4.1" fill="#0b9b8b" stroke="white" stroke-width="1.6"><title>Month ${i+1}: ${fmtUSD(v)}</title></circle><text class="axislabel" x="${px(i)}" y="${H-13}" text-anchor="middle">${i+1}</text>`;});
+ svg.innerHTML=out;
+}
+function resetAll(){
+ state={...defaults};
+ // Reset a shared scenario URL too, so refreshing does not restore old values.
+ if(window.history && window.history.replaceState){
+  let u=new URL(window.location.href);
+  for(const s of specs)u.searchParams.delete('p'+s.r);
+  window.history.replaceState(null,'',u.pathname+u.search+u.hash);
+ }
+ show('share-feedback','');
+ for(const s of specs){
+  const scale=s.kind==='pct'?100:1;
+  document.getElementById('sl'+s.r).value=s.val*scale;
+  document.getElementById('num'+s.r).value=showInput(s.val,s);
+ }
+ refresh();
+}
+function exportCSV(){
+ let headers=['Month','Active drivers','Average fare','Trips','Passenger fares','Driver earnings','Company gross commission','Card processing','Other variable costs','Fixed costs and payroll taxes','Pretax profit','State corporate tax','Federal corporate tax','Net company income'];
+ let rows=lastMonths.map((m,i)=>[i+1,m.drivers,m.fare,m.trips,m.gross,m.driver,m.company,m.card,m.varcost,m.fixed,m.pretax,m.statetax,m.federaltax,m.net]);
+ let csv=[headers.join(','),...rows.map(row=>row.map(v=>typeof v==='number'?v.toFixed(2):v).join(','))].join('\r\n');
+ let blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='rideshare_12_month_forecast.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+// A share URL stores only values that differ from the defaults; no server state.
+function loadSharedScenario(){
+ const params=new URLSearchParams(window.location.search);
+ for(const s of specs){
+  const raw=params.get('p'+s.r);
+  if(raw===null || raw.trim()==='')continue;
+  const v=Number(raw);
+  if(Number.isFinite(v) && v>=s.min && v<=s.max)state[s.r]=v;
+ }
+}
+async function shareScenario(){
+ const url=new URL(window.location.href);
+ for(const s of specs){
+  const key='p'+s.r;
+  if(Math.abs(state[s.r]-defaults[s.r])<1e-9)url.searchParams.delete(key);
+  else url.searchParams.set(key,String(Number(state[s.r].toFixed(5))));
+ }
+ const link=url.toString();
+ try{
+  if(!navigator.clipboard || !navigator.clipboard.writeText)throw new Error('Clipboard unavailable');
+  await navigator.clipboard.writeText(link);
+  show('share-feedback','✓ Link copied. Paste it into WhatsApp, email or a message.');
+ }catch(err){
+  // The site is usable even when clipboard permissions are blocked.
+  show('share-feedback','Copy the link from the dialog to share this scenario.');
+  window.prompt('Copy this scenario link:',link);
+ }
+}
+loadSharedScenario();createControls();refresh();
+</script>
+</body></html>
